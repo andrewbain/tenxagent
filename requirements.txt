@@ -1,0 +1,7 @@
+pytest
+pytest-asyncio
+openai
+pydantic
+httpx
+tiktoken
+python-dotenv
