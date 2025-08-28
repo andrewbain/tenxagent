@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Structured Output Support**: Added Pydantic model support for structured agent responses
+  - New `output_model` parameter in `TenxAgent` constructor accepts any Pydantic model class
+  - Automatic JSON schema injection into system prompts for structured output guidance
+  - Response validation and parsing against the specified Pydantic model
+  - Returns actual Pydantic model instances instead of raw strings when `output_model` is specified
+  - Graceful error handling for invalid response formats with descriptive error messages
+  - Backward compatible - regular string responses when no output model is specified
+
+### Changed
+- **Agent Return Type**: Updated `TenxAgent.run()` return type to `Union[str, BaseModel]`
+  - Returns Pydantic model instance when `output_model` is specified
+  - Returns string when no output model is provided (backward compatible)
+
 ## [0.1.2] - 2024-01-01
 
 ### Fixed
@@ -147,6 +161,22 @@ For users upgrading from previous versions:
        asyncio.run(main())
    ```
 
+4. **Using structured output (new in v0.1.3)**:
+   ```python
+   from pydantic import BaseModel, Field
+   
+   class OutputModel(BaseModel):
+       answer: str = Field(description="The main answer")
+       confidence: float = Field(description="Confidence score 0-1")
+   
+   # Create agent with structured output
+   agent = TenxAgent(llm=llm, tools=tools, output_model=OutputModel)
+   
+   # Returns Pydantic model instance
+   result = await agent.run("query", session_id="session_1")
+   print(f"Answer: {result.answer}, Confidence: {result.confidence}")
+   ```
+
 
 ## [0.1.0] - Initial Release
 
@@ -160,6 +190,14 @@ For users upgrading from previous versions:
 ---
 
 ## Release Notes
+
+### v0.1.3 - Structured Output Support
+This release adds powerful structured output capabilities:
+
+- 🎯 **New**: Pydantic model support for structured agent responses
+- 🎯 **New**: Automatic JSON schema generation and validation
+- 🎯 **New**: Returns actual Pydantic model instances for easy data handling
+- 🎯 **New**: Backward compatible with existing string-based workflows
 
 ### v0.1.2 - Bug Fixes & Simplification
 This release focuses on fixing the agent-as-tool functionality and simplifying the codebase:

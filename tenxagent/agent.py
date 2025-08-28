@@ -2,7 +2,7 @@
 from .models import LanguageModel
 from .tools import Tool
 from .schemas import Message, GenerationResult, ToolCall 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Type, Union
 from .history import HistoryStore, InMemoryHistoryStore
 from pydantic import BaseModel, Field
 import json
@@ -19,6 +19,7 @@ class TenxAgent:
         max_llm_calls: int = 10, # RENAMED for clarity
         max_tokens: int = 4096,
         history_store: HistoryStore = None,
+        output_model: Optional[Type[BaseModel]] = None,
     ):
         self.llm = llm
         self.tools = {tool.name: tool for tool in tools}
@@ -26,11 +27,31 @@ class TenxAgent:
         self.max_llm_calls = max_llm_calls
         self.max_tokens = max_tokens
         self.history_store = history_store or InMemoryHistoryStore()
+        self.output_model = output_model
 
     def _get_system_prompt(self) -> str:
         """Get the system prompt from the LLM model, which handles tool calling instructions."""
         tools_list = list(self.tools.values()) if self.tools else None
-        return self.llm.get_tool_calling_system_prompt(tools=tools_list, user_prompt=self.user_system_prompt)
+        
+        # Get base prompt from LLM
+        base_prompt = self.llm.get_tool_calling_system_prompt(tools=tools_list, user_prompt=self.user_system_prompt)
+        
+        # Add structured output instructions if output model is specified
+        if self.output_model:
+            schema = self.output_model.model_json_schema()
+            output_instructions = f"""
+
+IMPORTANT: Your response must be valid JSON that matches this exact schema:
+{json.dumps(schema, indent=2)}
+
+Example of the expected format:
+{json.dumps(self.output_model.model_json_schema().get('properties', {}), indent=2)}
+
+Always respond with valid JSON only, no additional text or explanation."""
+            
+            return base_prompt + output_instructions
+        
+        return base_prompt
 
     async def _execute_tool(self, tool_call: ToolCall, metadata: Dict[str, Any]) -> Message:
         """Helper to execute a single tool call and return a tool message."""
@@ -46,7 +67,7 @@ class TenxAgent:
         
         return Message(role="tool", content=result_content, tool_call_id=tool_call.id) # Assumes ToolCall has an ID
 
-    async def run(self, user_input: str, session_id: str, metadata: Optional[Dict[str, Any]] = None) -> str:
+    async def run(self, user_input: str, session_id: str, metadata: Optional[Dict[str, Any]] = None) -> Union[str, BaseModel]:
         metadata = metadata or {}
         llm_calls_count = 0
         total_tokens_used = 0
@@ -95,7 +116,33 @@ class TenxAgent:
                 continue # Go back to the LLM with the tool results
             
             # If there are no tool calls, we have our final answer
-            return response_message.content or "The agent finished without a final message."
+            final_content = response_message.content or "The agent finished without a final message."
+            
+            # If output model is specified, validate and parse the response
+            if self.output_model:
+                try:
+                    # Try to parse as JSON first
+                    if final_content.strip().startswith('{') and final_content.strip().endswith('}'):
+                        import json
+                        parsed_json = json.loads(final_content)
+                        validated_output = self.output_model(**parsed_json)
+                        return validated_output  # Return the Pydantic model instance
+                    else:
+                        # Content might have extra text, try to extract JSON
+                        import re
+                        json_match = re.search(r'\{.*\}', final_content, re.DOTALL)
+                        if json_match:
+                            parsed_json = json.loads(json_match.group())
+                            validated_output = self.output_model(**parsed_json)
+                            return validated_output  # Return the Pydantic model instance
+                        else:
+                            return f"Error: Response does not match required output format. Expected JSON matching {self.output_model.__name__} schema."
+                except json.JSONDecodeError as e:
+                    return f"Error: Invalid JSON in response: {str(e)}"
+                except Exception as e:
+                    return f"Error: Response validation failed: {str(e)}"
+            
+            return final_content
 
 class AgentToolInput(BaseModel):
     task: str = Field(description="The specific task for the agent to perform.")
