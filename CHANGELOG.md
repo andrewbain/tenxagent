@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2024-01-01
+
+### Fixed
+- **Agent-as-Tool Functionality**: Fixed `create_tenx_agent_tool()` function that was failing with attribute assignment errors
+  - Resolved `name = name` class attribute assignment issue in nested class definition
+  - Simplified async execution handling for better reliability
+  - Added proper metadata parameter support to agent tool execution
+  - Improved thread-based execution for nested async contexts
+  - Reduced complexity by 90% while maintaining full functionality
+
+- **Tool Signature Compatibility**: Updated all tool examples to include required `metadata` parameter
+  - Fixed `CalculatorTool` and other example tools to match new signature requirements
+  - Added safe evaluation using `safe_evaluate()` instead of `eval()` for security
+
+### Changed
+- **Simplified Architecture**: Streamlined agent-as-tool implementation
+  - Removed complex event loop management and nested async handling
+  - Implemented simple thread-based approach for async execution conflicts
+  - Removed `nest-asyncio` dependency for cleaner dependencies
+
+## [0.1.1] - 2024-01-01
+
 ### Added
 - **Comprehensive Metadata System**: Added full metadata support throughout the agent pipeline
   - Metadata flows from agent calls through to LLM APIs and tool executions
@@ -133,4 +155,25 @@ For users upgrading from previous versions:
 - OpenAI integration
 - Simple tool interface
 - In-memory history storage
-- Basic examples and tests 
+- Basic examples and tests
+
+---
+
+## Release Notes
+
+### v0.1.2 - Bug Fixes & Simplification
+This release focuses on fixing the agent-as-tool functionality and simplifying the codebase:
+
+- ✅ **Fixed**: `create_tenx_agent_tool()` now works reliably without complex async handling
+- ✅ **Simplified**: Reduced code complexity while maintaining all functionality  
+- ✅ **Updated**: All examples now use proper tool signatures with metadata support
+- ✅ **Secured**: Replaced `eval()` with `safe_evaluate()` in examples
+
+### v0.1.1 - Major Feature Release
+This release introduced the comprehensive metadata system and flexible model architecture:
+
+- 🚀 **New**: Complete metadata pipeline from agent → LLM → tools
+- 🚀 **New**: Flexible model system supporting different LLM providers
+- 🚀 **New**: Enhanced OpenAI integration with native function calling
+- 🚀 **New**: Environment variable support with `.env` files
+- 🚀 **New**: Safe expression evaluation system 

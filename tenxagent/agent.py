@@ -102,12 +102,48 @@ class AgentToolInput(BaseModel):
 
 def create_tenx_agent_tool(agent: TenxAgent, name: str, description: str) -> Tool:
     """Wraps an Agent to be used as a Tool by another Agent."""
+    
     class AgentAsTool(Tool):
-        name = name
-        description = description
-        args_schema = AgentToolInput
+        def __init__(self, agent_instance, tool_name, tool_description):
+            self.name = tool_name
+            self.description = tool_description
+            self.args_schema = AgentToolInput
+            self.agent = agent_instance
 
-        def execute(self, task: str) -> str:
-            return agent.run(task)
+        def execute(self, task: str, metadata: dict = None) -> str:
+            import asyncio
+            import uuid
             
-    return AgentAsTool()
+            # Generate a unique session ID for this tool execution
+            session_id = f"agent_tool_{uuid.uuid4().hex[:8]}"
+            
+            # Simple approach: just run the async function
+            try:
+                return asyncio.run(self.agent.run(task, session_id=session_id, metadata=metadata))
+            except RuntimeError as e:
+                if "cannot be called from a running event loop" in str(e):
+                    # We're in an async context, use a thread
+                    import threading
+                    import queue
+                    
+                    result_queue = queue.Queue()
+                    
+                    def run_in_thread():
+                        try:
+                            result = asyncio.run(self.agent.run(task, session_id=session_id, metadata=metadata))
+                            result_queue.put(('success', result))
+                        except Exception as e:
+                            result_queue.put(('error', e))
+                    
+                    thread = threading.Thread(target=run_in_thread)
+                    thread.start()
+                    thread.join()
+                    
+                    status, result = result_queue.get()
+                    if status == 'error':
+                        raise result
+                    return result
+                else:
+                    raise e
+            
+    return AgentAsTool(agent, name, description)

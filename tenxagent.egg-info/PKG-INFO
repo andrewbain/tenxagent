@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: tenxagent
-Version: 0.1.1
+Version: 0.1.2
 Summary: A flexible, Pydantic-powered library for building AI agents.
 Author-email: Andrew Bain <andrew.d.bain@gmail.com>
 Project-URL: Homepage, https://github.com/andrewbain/tenxagent

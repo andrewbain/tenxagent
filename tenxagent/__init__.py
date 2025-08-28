@@ -5,6 +5,7 @@ from .tools import Tool
 from .schemas import Message, GenerationResult
 from .history import HistoryStore, InMemoryHistoryStore
 from .utils import safe_evaluate
+from .agent import create_tenx_agent_tool
 
 __version__ = "0.1.0"
 __all__ = [
@@ -17,5 +18,6 @@ __all__ = [
     "GenerationResult",
     "HistoryStore",
     "InMemoryHistoryStore",
-    "safe_evaluate"
+    "safe_evaluate",
+    "create_tenx_agent_tool"
 ]
