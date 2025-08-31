@@ -21,6 +21,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Returns Pydantic model instance when `output_model` is specified
   - Returns string when no output model is provided (backward compatible)
 
+### Added
+- **Comprehensive Token Tracking**: Complete token usage monitoring across all LLM calls
+  - Tracks `total_tokens`, `prompt_tokens`, and `completion_tokens` for main agent and nested agent-as-tool calls
+  - Automatic propagation of token usage from nested agents back to parent agents
+  - Auto-population of token fields in response models when present
+  - Metadata-based token accumulation system for accurate cross-agent tracking
+
+- **Simplified History Management**: Clean and intuitive history handling
+  - Agent manages its own internal history automatically (no configuration needed)
+  - Optional `history` parameter in `run()` method to provide custom message history
+  - When `history` is provided, agent uses it without storing anything internally
+  - When `history` is not provided, agent uses its internal `InMemoryHistoryStore`
+  - Simple `List[Message]` format for all history - standard LLM message format
+  - No complex configuration or schema conversion needed
+
+### Improved
+- **System Prompt Generation**: Enhanced structured output instructions for better LLM comprehension
+  - Clear field-by-field descriptions with type information and constraints
+  - Special handling for enum types with explicit valid values
+  - Realistic example generation with proper enum values
+  - Stricter formatting rules to ensure JSON-only responses
+  - Better error prevention for complex Pydantic models
+
+### Fixed
+- **Message Safety**: Improved robustness when handling messages with optional tool_calls
+  - Safe access using `getattr()` and `or []` patterns to prevent AttributeError
+  - Graceful handling of messages that may not have tool_calls attribute
+  - Backward compatibility with different message formats
+
+### Changed
+- **Agent Interface**: Dramatically simplified history management
+  - Removed complex `history_store` parameter from agent constructor
+  - Added simple optional `history` parameter to `run()` method for custom message lists
+  - `session_id` parameter now defaults to "default" for even simpler usage
+  - Agent automatically manages internal history when no custom history provided
+  
+- **History Architecture**: Removed all complexity
+  - Eliminated flexible history stores, schemas, and conversion logic
+  - Single `InMemoryHistoryStore` class for internal use only
+  - No more abstract base classes or generic types
+  - Simple, direct approach with standard `Message` objects only
+
 ## [0.1.2] - 2024-01-01
 
 ### Fixed
@@ -177,6 +219,27 @@ For users upgrading from previous versions:
    print(f"Answer: {result.answer}, Confidence: {result.confidence}")
    ```
 
+5. **Using custom history (new in v0.1.3)**:
+   ```python
+   from tenxagent import Message
+   
+   # Option 1: Let agent manage history automatically
+   agent = TenxAgent(llm=llm, tools=tools)
+   result = await agent.run("Hello", session_id="session_1")  # Remembers context
+   result = await agent.run("What did I just say?", session_id="session_1")  # Uses history
+   
+   # Option 2: Provide your own history messages
+   my_history = [
+       Message(role="user", content="Hello"),
+       Message(role="assistant", content="Hi there! How can I help?"),
+       Message(role="user", content="What's 2+2?"),
+       Message(role="assistant", content="2+2 equals 4.")
+   ]
+   
+   # Agent uses provided history without storing anything
+   result = await agent.run("What was my math question?", history=my_history)
+   ```
+
 
 ## [0.1.0] - Initial Release
 
@@ -191,13 +254,20 @@ For users upgrading from previous versions:
 
 ## Release Notes
 
-### v0.1.3 - Structured Output Support
-This release adds powerful structured output capabilities:
+### v0.1.3 - Structured Output & Simplified History  
+This release adds powerful structured output capabilities and dramatically simplifies history management:
 
 - 🎯 **New**: Pydantic model support for structured agent responses
-- 🎯 **New**: Automatic JSON schema generation and validation
+- 🎯 **New**: Automatic JSON schema generation and validation  
 - 🎯 **New**: Returns actual Pydantic model instances for easy data handling
-- 🎯 **New**: Backward compatible with existing string-based workflows
+- 🎯 **New**: Comprehensive token tracking across all LLM calls (including nested agents)
+- ✨ **Simplified**: Removed all complex history store architecture
+- ✨ **Simplified**: Agent manages its own internal history automatically
+- 🎯 **New**: Optional `history` parameter to provide custom message lists
+- 🎯 **New**: Simple `List[Message]` format for all history operations
+- ✨ **Enhanced**: Improved system prompt generation for better structured output reliability
+- ✨ **Enhanced**: Special enum handling and clearer field descriptions for LLMs  
+- ✨ **Simplified**: No more abstract base classes or generic types for history
 
 ### v0.1.2 - Bug Fixes & Simplification
 This release focuses on fixing the agent-as-tool functionality and simplifying the codebase:

@@ -107,7 +107,7 @@ class OpenAIModel(LanguageModel):
                     "content": msg.content or "",
                     "tool_call_id": msg.tool_call_id
                 })
-            elif msg.role == "assistant" and msg.tool_calls:
+            elif msg.role == "assistant" and getattr(msg, 'tool_calls', None):
                 # Assistant messages with tool calls
                 openai_msg = {
                     "role": "assistant",
@@ -119,7 +119,7 @@ class OpenAIModel(LanguageModel):
                     openai_msg["content"] = msg.content
                 
                 # Convert tool calls to OpenAI format
-                for tc in msg.tool_calls:
+                for tc in msg.tool_calls or []:
                     # Handle arguments - if it's already a string, use as-is, otherwise JSON encode
                     args = tc.arguments if isinstance(tc.arguments, str) else json.dumps(tc.arguments)
                     openai_msg["tool_calls"].append({
@@ -179,11 +179,11 @@ class OpenAIModel(LanguageModel):
         
         # Convert OpenAI tool calls to our ToolCall format
         tool_calls = None
-        if openai_message.tool_calls:
+        if getattr(openai_message, 'tool_calls', None):
             from .schemas import ToolCall
             import json
             tool_calls = []
-            for tc in openai_message.tool_calls:
+            for tc in openai_message.tool_calls or []:
                 tool_calls.append(ToolCall(
                     id=tc.id,
                     name=tc.function.name,

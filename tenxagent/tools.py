@@ -1,12 +1,12 @@
 # in tenxagent/tools.py
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field
-from typing import Type, Dict, Any
+from typing import Type, Dict, Any, Optional
 
 class Tool(ABC):
     name: str
     description: str
-    args_schema: Type[BaseModel]
+    args_schema: Optional[Type[BaseModel]]
 
     @abstractmethod
     def execute(self, metadata: Dict[str, Any] = None, **kwargs) -> str:

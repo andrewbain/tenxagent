@@ -2,8 +2,8 @@
 from .agent import TenxAgent
 from .models import LanguageModel, OpenAIModel, ManualToolCallingModel
 from .tools import Tool
-from .schemas import Message, GenerationResult
-from .history import HistoryStore, InMemoryHistoryStore
+from .schemas import Message, GenerationResult, MongoMessage
+from .history import InMemoryHistoryStore
 from .utils import safe_evaluate
 from .agent import create_tenx_agent_tool
 
@@ -14,9 +14,9 @@ __all__ = [
     "OpenAIModel",
     "ManualToolCallingModel",
     "Tool",
-    "Message",
+    "Message", 
     "GenerationResult",
-    "HistoryStore",
+    "MongoMessage",
     "InMemoryHistoryStore",
     "safe_evaluate",
     "create_tenx_agent_tool"
