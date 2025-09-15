@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 # It's the modern equivalent of the setup() function.
 [project]
 name = "tenxagent"
-version = "0.1.15"
+version = "0.1.16"
 authors = [
   { name="Andrew Bain", email="andrew.d.bain@gmail.com" },
 ]
